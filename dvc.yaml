@@ -1,0 +1,8 @@
+stages:
+  run_eda:
+    cmd: python notebooks/eda-task1.py
+    deps:
+    - data/MachineLearningRating_v3.txt
+    - notebooks/eda-task1.py
+    outs:
+    - notebooks/eda_outputs
