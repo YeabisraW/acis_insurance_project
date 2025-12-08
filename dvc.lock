@@ -1,0 +1,19 @@
+schema: '2.0'
+stages:
+  run_eda:
+    cmd: python notebooks/eda-task1.py
+    deps:
+    - path: data/MachineLearningRating_v3.txt
+      hash: md5
+      md5: f6b7009b68ae21372b7deca9307fbb23
+      size: 529363713
+    - path: notebooks/eda-task1.py
+      hash: md5
+      md5: 747bf86db08cb0f49ced4e1ffa807561
+      size: 2522
+    outs:
+    - path: notebooks/eda_outputs
+      hash: md5
+      md5: 0ef152d240ac3a55514b28825bbfcbd5.dir
+      size: 8281
+      nfiles: 7
