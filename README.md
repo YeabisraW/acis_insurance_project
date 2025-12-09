@@ -1,29 +1,105 @@
-# ACIS Insurance Project
+# ACIS Insurance Analytics Project
 
-## Overview
-
-This project involves the analysis of insurance datasets and establishing a reproducible and auditable data pipeline using **Data Version Control (DVC)**. The workflow ensures that all analyses and results are reproducible and compliant with standard data management practices, which is critical in regulated industries such as finance and insurance.
+This project performs exploratory data analysis (EDA), feature engineering, and modeling for insurance risk data using a fully reproducible, DVC-powered ML pipeline. The repository follows engineering best practices in version control, reproducibility, documentation, and code quality.
 
 ---
 
-## Task 1: Exploratory Data Analysis (EDA)
+## Project Structure
 
-**Objective:** Perform a comprehensive exploratory data analysis on the `MachineLearningRating_v3.txt` dataset.
+```
+acis_insurance_project/
+│
+├── data/
+│   ├── raw/                     # Original dataset (DVC-tracked)
+│   ├── processed/               # Cleaned dataset outputs
+│
+├── notebooks/
+│   ├── eda-task1.py             # Main EDA script (modular, function-based)
+│   ├── eda_outputs/             # Histograms, boxplots, scatterplots, correlations
+│
+├── dvc.yaml                     # Pipeline definition (EDA stage included)
+├── dvc.lock                     # Auto-generated DVC dependency lock
+├── requirements.txt             # Python dependencies
+└── README.md                    # Project documentation
+```
 
-**Key Steps:**
+---
 
-* Load and inspect the dataset.
-* Analyze missing values and basic statistics.
-* Compute metrics like **Loss Ratio** overall, by province, vehicle type, and gender.
-* Identify top vehicle makes with high loss ratios.
-* Save sample rows and analysis outputs for reproducibility.
+## Getting Started
 
-**Files:**
+### 1. Clone the Repository
 
-* `notebooks/eda-task1.py` — Python script performing EDA.
-* `notebooks/eda_outputs/` — Directory containing outputs from the EDA script (sample rows, summary statistics).
+```bash
+git clone https://github.com/<your-username>/acis_insurance_project.git
+cd acis_insurance_project
+```
 
-**Run EDA:**
+---
+
+## Environment Setup
+
+### 2. Create and Activate Environment
+
+```bash
+python -m venv venv
+source venv/bin/activate        # macOS/Linux
+venv\Scripts\activate           # Windows
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Data Retrieval (DVC)
+
+This project uses **DVC** to manage large datasets.
+
+### 4. Pull Data from Remote Storage
+
+Make sure DVC is installed:
+
+```bash
+pip install dvc
+```
+
+Then pull the dataset:
+
+```bash
+dvc pull
+```
+
+This downloads all required data files into the `data/` directory.
+
+---
+
+## Running the EDA Pipeline
+
+The EDA stage generates:
+
+* Histograms
+* Boxplots
+* Outlier analysis (IQR method)
+* Scatter plots
+* Correlation matrix (CSV + heatmap)
+* Summary statistics
+
+All outputs are saved in:
+
+```
+notebooks/eda_outputs/
+```
+
+### Run EDA via DVC:
+
+```bash
+dvc repro eda
+```
+
+### Or run manually:
 
 ```bash
 python notebooks/eda-task1.py
@@ -31,103 +107,96 @@ python notebooks/eda-task1.py
 
 ---
 
-## Task 2: Data Version Control (DVC) Pipeline
+## Pipeline (DVC)
 
-**Objective:** Set up a reproducible and auditable data pipeline using DVC.
+The pipeline consists of the following stages:
 
-**Key Steps:**
+| Stage                   | Description                                                    |
+| ----------------------- | -------------------------------------------------------------- |
+| **eda**                 | Runs `eda-task1.py`, generates plots, summaries, outlier files |
+| **feature_engineering** | (Planned) Will create model-ready features                     |
+| **modeling**            | (Planned) ML model training + evaluation                       |
 
-1. **Install DVC:**
-
-```bash
-pip install dvc
-```
-
-2. **Initialize DVC:**
+To see the full pipeline graph:
 
 ```bash
-dvc init
+dvc dag
 ```
-
-3. **Set up local DVC remote storage:**
-
-```bash
-mkdir .dvc_storage
-dvc remote add -d localstorage .dvc_storage
-```
-
-4. **Add data to DVC:**
-
-```bash
-dvc add data/MachineLearningRating_v3.txt
-```
-
-5. **Commit DVC metadata to Git:**
-
-```bash
-git add dvc.yaml dvc.lock .gitignore
-git commit -m "Add DVC stage for Task 1 EDA"
-```
-
-6. **Run DVC pipeline:**
-
-```bash
-dvc repro
-```
-
-7. **Push DVC-tracked data to remote storage:**
-
-```bash
-dvc push
-```
-
-**Files:**
-
-* `.dvc/config` — DVC configuration file.
-* `dvc.yaml` — DVC pipeline stages (including `run_eda`).
-* `dvc.lock` — Locked versions of stages and data.
-* `.dvc_storage/` — Local remote storage for data files (ignored in Git, tracked by DVC).
 
 ---
 
-## Notes
+## Git Workflow Guidelines
 
-* Large data files are managed using DVC to avoid GitHub file size limitations.
-* The workflow ensures any dataset and analysis can be reproduced exactly by re-running the DVC pipeline.
-* This setup provides transparency and compliance for auditing and regulatory purposes.
+This repository follows a clean Git strategy:
+
+### Conventional Commit Prefixes:
+
+* `feat:` new feature
+* `fix:` bug fix
+* `docs:` documentation changes
+* `chore:` non-code maintenance
+
+### Branching:
+
+* `main` → stable
+* `task-1`, `task-2` → feature branches
+
+### Creating a Pull Request:
+
+* Include a short description
+* List changes made
+* Add test steps
+* Keep commits small and focused
 
 ---
 
-## How to Use
+## EDA Outputs
 
-1. Clone the repository:
+The EDA script automatically generates:
 
-```bash
-git clone https://github.com/YeabisraW/acis_insurance_project.git
-cd acis_insurance_project
+```
+numeric_summary.csv
+TotalPremium_hist.png
+TotalPremium_boxplot.png
+TotalPremium_outliers.csv
+TotalClaims_hist.png
+TotalClaims_boxplot.png
+TotalClaims_outliers.csv
+TotalClaims_vs_TotalPremium_scatter.png
+LossRatio_hist.png
+LossRatio_boxplot.png
+LossRatio_outliers.csv
+LossRatio_vs_TotalPremium_scatter.png
+LossRatio_vs_TotalClaims_scatter.png
+correlation_matrix.csv
+correlation_matrix.png
 ```
 
-2. Checkout `task-2` branch for the latest DVC pipeline:
+All files appear inside:
 
-```bash
-git checkout task-2
+```
+notebooks/eda_outputs/
 ```
 
-3. Install required Python packages:
+---
 
-```bash
-pip install -r requirements.txt
-```
+## Next Steps (Future Stages)
 
-4. Pull data from DVC remote storage:
+The next pipeline components will include:
 
-```bash
-dvc pull
-```
+### 🔹 Feature Engineering
 
-5. Reproduce EDA results:
+* Handling missing values
+* Encoding categorical variables
+* Feature scaling
+* Feature selection
 
-```bash
-dvc repro
-```
+### 🔹 Modeling
 
+* Training baseline ML models
+* Hyperparameter tuning
+* Model evaluation metrics
+
+Each stage will be fully added to `dvc.yaml` for reproducibility.
+
+---

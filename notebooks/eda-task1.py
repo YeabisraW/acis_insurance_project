@@ -1,126 +1,115 @@
-import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
-# Set seaborn style
-sns.set(style="whitegrid")
+# -----------------------------------------------------------------------------
+# 1. LOAD DATA
+# -----------------------------------------------------------------------------
+df = pd.read_csv("data/raw/MachineLearningRating_v3.txt", delimiter="|")
 
-# Paths
-DATA_PATH = "data/MachineLearningRating_v3.txt"
-OUTPUT_DIR = "notebooks/eda_outputs"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+# -----------------------------------------------------------------------------
+# 2. CREATE NECESSARY VARIABLES
+# -----------------------------------------------------------------------------
 
-def load_data(path):
-    """Load dataset and handle errors."""
-    try:
-        df = pd.read_csv(path, sep='|', low_memory=False)
-        print(f"Dataset loaded successfully!\nShape: {df.shape}")
-        return df
-    except FileNotFoundError:
-        print(f"File not found: {path}")
-        exit(1)
+# Create Loss Ratio = TotalClaims / TotalPremium
+df["LossRatio"] = df["TotalClaims"] / df["TotalPremium"]
 
-def compute_basic_stats(df):
-    """Compute basic stats for numeric columns and save summary."""
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    stats = df[numeric_cols].describe()
-    stats_file = os.path.join(OUTPUT_DIR, "numeric_summary.csv")
-    stats.to_csv(stats_file)
-    print(f"Basic statistics saved to {stats_file}")
-    return stats
+# Handle division by zero, inf, or missing values
+df["LossRatio"] = df["LossRatio"].replace([np.inf, -np.inf], np.nan)
+df["LossRatio"] = df["LossRatio"].fillna(0)
 
-def plot_histogram(df, col, save_path=None):
-    """Plot histogram for a numeric column."""
-    if col not in df.columns:
-        print(f"Column {col} not found!")
-        return
-    plt.figure(figsize=(8, 5))
-    sns.histplot(df[col].dropna(), kde=True)
-    plt.title(f'Histogram of {col}')
-    if save_path:
-        file = os.path.join(save_path, f"{col}_hist.png")
-        plt.savefig(file)
-        print(f"Histogram saved to {file}")
-    plt.show()
+# Numeric variables required for the EDA
+numeric_vars = ["TotalPremium", "TotalClaims", "LossRatio"]
 
-def plot_scatter(df, x_col, y_col, save_path=None):
-    """Plot scatter plot between two numeric columns."""
-    if x_col not in df.columns or y_col not in df.columns:
-        print(f"Columns {x_col} or {y_col} not found!")
-        return
-    plt.figure(figsize=(8, 5))
-    sns.scatterplot(data=df, x=x_col, y=y_col)
-    plt.title(f'{y_col} vs {x_col}')
-    if save_path:
-        file = os.path.join(save_path, f"{y_col}_vs_{x_col}_scatter.png")
-        plt.savefig(file)
-        print(f"Scatter plot saved to {file}")
-    plt.show()
+# -----------------------------------------------------------------------------
+# 3. CREATE OUTPUT FOLDERS
+# -----------------------------------------------------------------------------
+os.makedirs("artifacts/plots/univariate", exist_ok=True)
+os.makedirs("artifacts/plots/bivariate", exist_ok=True)
+os.makedirs("artifacts/plots/multivariate", exist_ok=True)
+os.makedirs("artifacts/reports", exist_ok=True)
 
-def plot_box(df, col, save_path=None):
-    """Plot box plot and identify outliers."""
-    if col not in df.columns:
-        print(f"Column {col} not found!")
-        return
-    plt.figure(figsize=(8, 5))
-    sns.boxplot(y=df[col].dropna())
-    plt.title(f'Box plot of {col}')
-    if save_path:
-        file = os.path.join(save_path, f"{col}_boxplot.png")
-        plt.savefig(file)
-        print(f"Box plot saved to {file}")
-    plt.show()
+# -----------------------------------------------------------------------------
+# 4. UNIVARIATE ANALYSIS
+# -----------------------------------------------------------------------------
+outlier_report = {}
 
-def plot_correlation_matrix(df, save_path=None):
-    """Plot correlation matrix for numeric columns."""
-    numeric_df = df.select_dtypes(include=[np.number])
-    corr = numeric_df.corr()
-    corr_file = os.path.join(OUTPUT_DIR, "correlation_matrix.csv")
-    corr.to_csv(corr_file)
-    print(f"Correlation matrix saved to {corr_file}")
-    plt.figure(figsize=(12, 8))
-    sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm")
-    plt.title("Correlation Matrix")
-    if save_path:
-        file = os.path.join(save_path, "correlation_matrix.png")
-        plt.savefig(file)
-        print(f"Correlation matrix plot saved to {file}")
-    plt.show()
+# --- HISTOGRAMS ---
+for col in numeric_vars:
+    plt.figure(figsize=(7, 5))
+    sns.histplot(df[col], kde=True)
+    plt.title(f"Histogram of {col}")
+    plt.xlabel(col)
+    plt.ylabel("Frequency")
+    plt.savefig(f"artifacts/plots/univariate/{col}_histogram.png")
+    plt.close()
 
-def save_outliers(df, col):
-    """Save outliers for a numeric column."""
-    if col not in df.columns:
-        return
-    q1 = df[col].quantile(0.25)
-    q3 = df[col].quantile(0.75)
-    iqr = q3 - q1
-    outliers = df[(df[col] < q1 - 1.5*iqr) | (df[col] > q3 + 1.5*iqr)]
-    outlier_file = os.path.join(OUTPUT_DIR, f"{col}_outliers.csv")
-    outliers.to_csv(outlier_file, index=False)
-    print(f"Outliers for {col} saved to {outlier_file}")
-    return outliers
+# --- BOXPLOTS + OUTLIER ANALYSIS ---
+for col in numeric_vars:
+    Q1 = df[col].quantile(0.25)
+    Q3 = df[col].quantile(0.75)
+    IQR = Q3 - Q1
+    lower = Q1 - 1.5 * IQR
+    upper = Q3 + 1.5 * IQR
 
-if __name__ == "__main__":
-    df = load_data(DATA_PATH)
-    stats = compute_basic_stats(df)
+    # Detect outliers
+    outliers = df[(df[col] < lower) | (df[col] > upper)]
 
-    numeric_cols = ["TotalPremium", "TotalClaims"]
-    for col in numeric_cols:
-        plot_histogram(df, col, save_path=OUTPUT_DIR)
-        plot_box(df, col, save_path=OUTPUT_DIR)
-        save_outliers(df, col)
+    outlier_report[col] = {
+        "Q1": Q1,
+        "Q3": Q3,
+        "IQR": IQR,
+        "LowerBound": lower,
+        "UpperBound": upper,
+        "OutlierCount": len(outliers)
+    }
 
-    # Example scatter plot
-    plot_scatter(df, "TotalPremium", "TotalClaims", save_path=OUTPUT_DIR)
+    plt.figure(figsize=(7, 4))
+    sns.boxplot(x=df[col])
+    plt.title(f"Boxplot of {col}")
+    plt.savefig(f"artifacts/plots/univariate/{col}_boxplot.png")
+    plt.close()
 
-    plot_correlation_matrix(df, save_path=OUTPUT_DIR)
+# Save outlier summary
+pd.DataFrame(outlier_report).T.to_csv("artifacts/reports/outlier_summary.csv")
 
-    # Example LossRatio analysis if column exists
-    if "LossRatio" in df.columns:
-        plot_histogram(df, "LossRatio", save_path=OUTPUT_DIR)
-        plot_box(df, "LossRatio", save_path=OUTPUT_DIR)
-        save_outliers(df, "LossRatio")
-    else:
-        print("Column 'LossRatio' not found, skipping related plots.")
+# -----------------------------------------------------------------------------
+# 5. BIVARIATE ANALYSIS
+# -----------------------------------------------------------------------------
+
+pairs = [
+    ("TotalPremium", "TotalClaims"),
+    ("TotalPremium", "LossRatio"),
+    ("TotalClaims", "LossRatio")
+]
+
+for x, y in pairs:
+    plt.figure(figsize=(7, 5))
+    sns.scatterplot(x=df[x], y=df[y])
+    plt.title(f"Scatter Plot: {x} vs {y}")
+    plt.xlabel(x)
+    plt.ylabel(y)
+    plt.savefig(f"artifacts/plots/bivariate/{x}_vs_{y}.png")
+    plt.close()
+
+# -----------------------------------------------------------------------------
+# 6. MULTIVARIATE ANALYSIS
+# -----------------------------------------------------------------------------
+
+# Correlation matrix
+corr = df[numeric_vars].corr()
+
+# Save correlation matrix CSV
+corr.to_csv("artifacts/reports/correlation_matrix.csv")
+
+# Heatmap
+plt.figure(figsize=(7, 6))
+sns.heatmap(corr, annot=True, cmap="Blues", fmt=".2f")
+plt.title("Correlation Matrix Heatmap")
+plt.savefig("artifacts/plots/multivariate/correlation_matrix_heatmap.png")
+plt.close()
+
+print("\nEDA Completed Successfully. Check the 'artifacts' folder for outputs.\n")
+
