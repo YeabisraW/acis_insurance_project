@@ -1,174 +1,106 @@
-ACIS Insurance Analytics Project
-
-This project performs exploratory data analysis (EDA), feature engineering, statistical analysis, and modeling for insurance risk data using a fully reproducible, DVC-powered ML pipeline. The repository follows engineering best practices in version control, reproducibility, documentation, and code quality.
-
-Project Structure
-acis_insurance_project/
-│
-├── data/
-│   ├── raw/                     # Original dataset (DVC-tracked)
-│   ├── processed/               # Cleaned dataset outputs
-│
-├── notebooks/
-│   ├── eda-task1.py             # Main EDA script (modular, function-based)
-│   ├── eda_outputs/             # Histograms, boxplots, scatterplots, correlations
-│   ├── task3_analysis.ipynb     # Statistical analysis & hypothesis testing outputs
-│   └── task4_modeling.ipynb     # Predictive modeling outputs
-│
-├── scripts/
-│   ├── task_3.py                # Statistical analysis & hypothesis testing
-│   ├── task_4.py                # Predictive modeling & premium optimization
-│
-├── dvc.yaml                     # Pipeline definition (EDA, task3, task4 stages included)
-├── dvc.lock                     # Auto-generated DVC dependency lock
-├── requirements.txt             # Python dependencies
-└── README.md                    # Project documentation
-
-Getting Started
-1. Clone the Repository
-git clone https://github.com/<your-username>/acis_insurance_project.git
-cd acis_insurance_project
-
-Environment Setup
-2. Create and Activate Environment
-python -m venv venv
-source venv/bin/activate        # macOS/Linux
-venv\Scripts\activate           # Windows
-
-3. Install Dependencies
-pip install -r requirements.txt
-
-Data Retrieval (DVC)
-
-This project uses DVC to manage large datasets.
-
-4. Pull Data from Remote Storage
-
-Make sure DVC is installed:
-
-pip install dvc
-
-
-Then pull the dataset:
-
-dvc pull
-
-
-This downloads all required data files into the data/ directory.
-
-Running the EDA Pipeline
-
-The EDA stage generates:
-
-Histograms
-
-Boxplots
-
-Outlier analysis (IQR method)
-
-Scatter plots
-
-Correlation matrix (CSV + heatmap)
-
-Summary statistics
-
-All outputs are saved in:
-
-notebooks/eda_outputs/
-
-Run EDA via DVC:
-dvc repro eda
-
-Or run manually:
-python notebooks/eda-task1.py
-
-Task 3 – Statistical Analysis & Hypothesis Testing
-
-Objective: Statistically validate key hypotheses about risk drivers.
-
-Key Activities:
-
-Calculate claim frequency and severity by Province, ZipCode, and Gender
-
-Conduct ANOVA and t-tests to accept/reject hypotheses
-
-Visualize distributions and differences
-
-Outputs:
-
-scripts/task_3.py
-notebooks/eda_outputs/task3_outputs/
-    ├── LossRatio_by_Province.png
-    ├── TotalClaims_by_Gender_boxplot.png
-    ├── Margin_by_ZipCode_boxplot.png
-scripts/task3_outputs/hypothesis_testing_results.csv
-
-
-Sample Findings:
-
-Claim frequency differs significantly across provinces – Reject H₀
-
-No significant difference in claim frequency by gender – Fail to reject H₀
-
-Margin differences across top 10 zip codes not significant – Fail to reject H₀
-
-Task 4 – Predictive Modeling & Premium Optimization
-
-Objective: Build predictive models for claim severity and risk-based premium estimation.
-
-Key Activities:
-
-Data preparation: handle missing values, feature engineering, encode categorical variables
-
-Train-test split (70:30)
-
-Model implementation: Linear Regression, Random Forest, XGBoost
-
-Evaluate using RMSE and R² for regression; accuracy, precision, recall, F1-score for classification
-
-Model interpretability using SHAP or LIME
-
-Outputs:
-
-scripts/task_4.py
-notebooks/eda_outputs/task4_outputs/
-    ├── ModelEvaluation_Regression.png
-    ├── ModelEvaluation_Classification.png
-    ├── FeatureImportance_SHAP.png
-    └── RiskBasedPremium_Predictions.csv
-
-
-Sample Insights:
-
-Older vehicles increase predicted claim amount.
-
-Certain vehicle makes/models have higher risk.
-
-SHAP analysis identifies top 5–10 influential features affecting premium prediction.
-
-Pipeline (DVC)
-
-The pipeline now includes:
-
-Stage	Description
-eda	Runs eda-task1.py, generates plots and summaries
-task3_analysis	Runs task_3.py, performs statistical tests, generates plots
-task4_modeling	Runs task_4.py, trains models, evaluates, and generates outputs
-feature_engineering	Prepares model-ready features
-modeling	Trains and evaluates ML models
-
-Visualize the pipeline graph:
-
-dvc dag
-
-Git Workflow Guidelines
-
-Follow the same clean Git workflow as before:
-
-main → stable
-
-Feature branches: task-1, task-2, task-3, task-4
-
-Conventional commits: feat:, fix:, docs:, chore:
-
-Pull Requests: include description, list of changes, test steps
+# ACIS Insurance Analytics Project
+# 
+# This project performs exploratory data analysis (EDA), statistical hypothesis testing, 
+# feature engineering, and predictive modeling for car insurance risk data using a fully 
+# reproducible, DVC-powered ML pipeline. The repository follows best practices in version control, 
+# reproducibility, documentation, and code quality.
+#
+# Project Structure:
+# acis_insurance_project/
+# │
+# ├── data/
+# │   ├── raw/                     # Original dataset (DVC-tracked)
+# │   ├── processed/               # Cleaned dataset outputs
+# │
+# ├── notebooks/
+# │   ├── eda-task1.py             # Main EDA script
+# │   ├── eda_outputs/             # Plots, statistics, correlation matrices
+# │   ├── task3_outputs/           # Hypothesis testing outputs
+# │   ├── task4_outputs/           # Model evaluation & SHAP plots
+# │
+# ├── scripts/
+# │   ├── task_3.py                # Statistical hypothesis testing
+# │   ├── task_4.py                # Predictive modeling & SHAP analysis
+# │
+# ├── dvc.yaml                     # Pipeline definition
+# ├── dvc.lock                     # Auto-generated dependency lock
+# ├── requirements.txt             # Python dependencies
+# └── README.md                    # Project documentation
+#
+# Getting Started:
+# 1. Clone the Repository:
+#    git clone https://github.com/YeabisraW/acis_insurance_project.git
+#    cd acis_insurance_project
+#
+# 2. Create and Activate Environment:
+#    python -m venv venv
+#    source venv/bin/activate        # macOS/Linux
+#    venv\Scripts\activate           # Windows
+#
+# 3. Install Dependencies:
+#    pip install -r requirements.txt
+#
+# Data Management with DVC:
+#    pip install dvc
+#    dvc pull
+#
+# Tasks Overview:
+# Task 1 – Exploratory Data Analysis (EDA):
+# - Descriptive statistics: TotalPremium, TotalClaims, LossRatio
+# - Histograms and boxplots
+# - Outlier detection (IQR method)
+# - Scatter plots for bivariate analysis
+# - Correlation matrix
+# Outputs: notebooks/eda_outputs/
+#
+# Task 2 – Data Version Control (DVC):
+# - DVC initialized and configured
+# - Raw dataset and EDA outputs tracked
+# Commands:
+#    dvc init
+#    dvc add data/raw/MachineLearningRating_v3.txt
+#    dvc repro eda
+#    dvc push
+#
+# Task 3 – Statistical Hypothesis Testing:
+# Hypotheses:
+# - Claim frequency differs across Provinces (Chi-squared)
+# - Claim frequency differs by Gender (Chi-squared)
+# - Claim frequency differs across top 10 ZipCodes (Chi-squared)
+# - LossRatio differs across Provinces (ANOVA)
+# Business Insights:
+# - Provinces with higher claim frequency or loss ratios may require premium adjustments
+# - Top-risk zip codes identified for location-based pricing and marketing targeting
+# - Gender effects inform marketing strategy
+# Outputs: scripts/task3_outputs/hypothesis_testing_results.csv
+#
+# Task 4 – Predictive Modeling & Risk-Based Premiums:
+# Objectives:
+# - Predict claim severity (TotalClaims) using Linear Regression, Random Forest, and XGBoost
+# - Analyze feature importance using SHAP
+# Modeling Steps:
+# - Filter dataset to policies with claims > 0
+# - Select numeric features dynamically
+# - Handle missing values
+# - Train-test split (70/30)
+# - Model evaluation: R-squared scores
+# - SHAP analysis for top features
+# Business Insights:
+# - Features like VehicleAge, PolicyTerm, and prior claims have the highest impact
+# - SHAP plots guide premium adjustments
+# Outputs: notebooks/eda_outputs/task4_outputs/
+#
+# DVC Pipeline:
+# Stage: eda             - Runs EDA and generates plots and summaries
+# Stage: feature_engineering - Prepares model-ready features
+# Stage: modeling         - Trains ML models and outputs performance & SHAP plots
+#
+# Git Workflow Guidelines:
+# - Branches: main (stable), task-1 → task-4 (feature branches)
+# - Commit prefixes: feat:, fix:, docs:, chore:
+# - Pull Requests: descriptive titles, small focused commits, testing instructions
+#
+# GitHub Actions (CI/CD):
+# Optional workflow: runs linting and tests on push/PR
+# File path: .github/workflows/python-lint-test.yml
+# - Checks code automatically before merging
