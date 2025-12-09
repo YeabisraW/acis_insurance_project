@@ -1,0 +1,32 @@
+Feature,Metric,p_value,Reject_H0
+Gauteng,ClaimFrequency,3.621582860877529e-05,True
+KwaZulu-Natal,ClaimFrequency,0.6318036277382153,False
+Eastern Cape,ClaimFrequency,0.06228781910653667,False
+Western Cape,ClaimFrequency,0.004381087025773576,True
+Limpopo,ClaimFrequency,0.9847208371151112,False
+North West,ClaimFrequency,0.0023025351542002802,True
+Free State,ClaimFrequency,0.43392205510252024,False
+Mpumalanga,ClaimFrequency,0.3915055988436391,False
+Northern Cape,ClaimFrequency,0.42763248135548126,False
+Gauteng,ClaimSeverity,0.5989915711388039,False
+KwaZulu-Natal,ClaimSeverity,0.059162499046408884,False
+Eastern Cape,ClaimSeverity,0.18277551356524782,False
+Western Cape,ClaimSeverity,0.2890059341313507,False
+Limpopo,ClaimSeverity,2.1182029062489216e-05,True
+North West,ClaimSeverity,0.7806995828524572,False
+Free State,ClaimSeverity,0.3558529257773836,False
+Mpumalanga,ClaimSeverity,0.004914523900273481,True
+Northern Cape,ClaimSeverity,,False
+Gauteng,Margin,0.022230886258523482,True
+KwaZulu-Natal,Margin,0.951019341628372,False
+Eastern Cape,Margin,0.003679285336068821,True
+Western Cape,Margin,0.9553318223510826,False
+Limpopo,Margin,0.00032884820912713365,True
+North West,Margin,0.25900506484530555,False
+Free State,Margin,0.08770672239624971,False
+Mpumalanga,Margin,0.035849112673916717,True
+Northern Cape,Margin,1.8598411785086818e-14,True
+Gender,ClaimFrequency,,False
+Gender,ClaimSeverity,,False
+Gender,Margin,,False
+Top2ZipCodes,Margin,0.867538229231186,False
