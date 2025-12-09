@@ -1,78 +1,115 @@
-import os
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
 
-# ------------------------------
-# Paths
-# ------------------------------
-# Project root (one level above notebooks)
-project_root = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
+# -----------------------------------------------------------------------------
+# 1. LOAD DATA
+# -----------------------------------------------------------------------------
+df = pd.read_csv("data/raw/MachineLearningRating_v3.txt", delimiter="|")
 
-# Data path
-data_file = os.path.join(project_root, 'data', 'MachineLearningRating_v3.txt')
+# -----------------------------------------------------------------------------
+# 2. CREATE NECESSARY VARIABLES
+# -----------------------------------------------------------------------------
 
-# Output folder
-output_dir = os.path.join(project_root, 'notebooks', 'eda_outputs')
-os.makedirs(output_dir, exist_ok=True)
+# Create Loss Ratio = TotalClaims / TotalPremium
+df["LossRatio"] = df["TotalClaims"] / df["TotalPremium"]
 
-# ------------------------------
-# Load dataset
-# ------------------------------
-df = pd.read_csv(data_file, sep='|', low_memory=False)
-print("Dataset loaded successfully!")
-print(f"Shape: {df.shape}")
+# Handle division by zero, inf, or missing values
+df["LossRatio"] = df["LossRatio"].replace([np.inf, -np.inf], np.nan)
+df["LossRatio"] = df["LossRatio"].fillna(0)
 
-# ------------------------------
-# Basic EDA
-# ------------------------------
-# Missing values
-missing = df.isna().sum()
-missing.to_csv(os.path.join(output_dir, 'missing_values.csv'))
-print("--- Missing Values ---")
-print(missing.head(10))
+# Numeric variables required for the EDA
+numeric_vars = ["TotalPremium", "TotalClaims", "LossRatio"]
 
-# Statistics
-stats = df.describe(include='all')
-stats.to_csv(os.path.join(output_dir, 'basic_stats.csv'))
-print("--- Basic Statistics ---")
-print(stats.head(10))
+# -----------------------------------------------------------------------------
+# 3. CREATE OUTPUT FOLDERS
+# -----------------------------------------------------------------------------
+os.makedirs("artifacts/plots/univariate", exist_ok=True)
+os.makedirs("artifacts/plots/bivariate", exist_ok=True)
+os.makedirs("artifacts/plots/multivariate", exist_ok=True)
+os.makedirs("artifacts/reports", exist_ok=True)
 
-# ------------------------------
-# Loss Ratio calculation
-# ------------------------------
-df['LossRatio'] = df['TotalClaims'] / df['TotalPremium']
-df['LossRatio'].replace([np.inf, -np.inf], np.nan, inplace=True)
+# -----------------------------------------------------------------------------
+# 4. UNIVARIATE ANALYSIS
+# -----------------------------------------------------------------------------
+outlier_report = {}
 
-# Overall loss ratio
-overall_lr = df['LossRatio'].mean()
-print(f"\nOverall Loss Ratio: {overall_lr:.2f}")
+# --- HISTOGRAMS ---
+for col in numeric_vars:
+    plt.figure(figsize=(7, 5))
+    sns.histplot(df[col], kde=True)
+    plt.title(f"Histogram of {col}")
+    plt.xlabel(col)
+    plt.ylabel("Frequency")
+    plt.savefig(f"artifacts/plots/univariate/{col}_histogram.png")
+    plt.close()
 
-# By Province
-lr_by_province = df.groupby('Province')['LossRatio'].mean()
-lr_by_province.to_csv(os.path.join(output_dir, 'lossratio_by_province.csv'))
-print("\nLoss Ratio by Province:")
-print(lr_by_province)
+# --- BOXPLOTS + OUTLIER ANALYSIS ---
+for col in numeric_vars:
+    Q1 = df[col].quantile(0.25)
+    Q3 = df[col].quantile(0.75)
+    IQR = Q3 - Q1
+    lower = Q1 - 1.5 * IQR
+    upper = Q3 + 1.5 * IQR
 
-# By VehicleType
-lr_by_vehicle = df.groupby('VehicleType')['LossRatio'].mean()
-lr_by_vehicle.to_csv(os.path.join(output_dir, 'lossratio_by_vehicle.csv'))
-print("\nLoss Ratio by VehicleType:")
-print(lr_by_vehicle)
+    # Detect outliers
+    outliers = df[(df[col] < lower) | (df[col] > upper)]
 
-# By Gender
-lr_by_gender = df.groupby('Gender')['LossRatio'].mean()
-lr_by_gender.to_csv(os.path.join(output_dir, 'lossratio_by_gender.csv'))
-print("\nLoss Ratio by Gender:")
-print(lr_by_gender)
+    outlier_report[col] = {
+        "Q1": Q1,
+        "Q3": Q3,
+        "IQR": IQR,
+        "LowerBound": lower,
+        "UpperBound": upper,
+        "OutlierCount": len(outliers)
+    }
 
-# Top 5 Vehicle Makes by Loss Ratio
-top_makes = df.groupby('make')['LossRatio'].mean().sort_values(ascending=False).head(5)
-top_makes.to_csv(os.path.join(output_dir, 'top5_lossratio_makes.csv'))
-print("\nTop 5 Vehicle Makes by Loss Ratio:")
-print(top_makes)
+    plt.figure(figsize=(7, 4))
+    sns.boxplot(x=df[col])
+    plt.title(f"Boxplot of {col}")
+    plt.savefig(f"artifacts/plots/univariate/{col}_boxplot.png")
+    plt.close()
 
-# ------------------------------
-# Save sample rows
-# ------------------------------
-df.sample(5).to_csv(os.path.join(output_dir, 'sample_rows.csv'))
-print("\nSample rows saved.")
+# Save outlier summary
+pd.DataFrame(outlier_report).T.to_csv("artifacts/reports/outlier_summary.csv")
+
+# -----------------------------------------------------------------------------
+# 5. BIVARIATE ANALYSIS
+# -----------------------------------------------------------------------------
+
+pairs = [
+    ("TotalPremium", "TotalClaims"),
+    ("TotalPremium", "LossRatio"),
+    ("TotalClaims", "LossRatio")
+]
+
+for x, y in pairs:
+    plt.figure(figsize=(7, 5))
+    sns.scatterplot(x=df[x], y=df[y])
+    plt.title(f"Scatter Plot: {x} vs {y}")
+    plt.xlabel(x)
+    plt.ylabel(y)
+    plt.savefig(f"artifacts/plots/bivariate/{x}_vs_{y}.png")
+    plt.close()
+
+# -----------------------------------------------------------------------------
+# 6. MULTIVARIATE ANALYSIS
+# -----------------------------------------------------------------------------
+
+# Correlation matrix
+corr = df[numeric_vars].corr()
+
+# Save correlation matrix CSV
+corr.to_csv("artifacts/reports/correlation_matrix.csv")
+
+# Heatmap
+plt.figure(figsize=(7, 6))
+sns.heatmap(corr, annot=True, cmap="Blues", fmt=".2f")
+plt.title("Correlation Matrix Heatmap")
+plt.savefig("artifacts/plots/multivariate/correlation_matrix_heatmap.png")
+plt.close()
+
+print("\nEDA Completed Successfully. Check the 'artifacts' folder for outputs.\n")
+

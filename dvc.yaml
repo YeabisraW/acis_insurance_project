@@ -1,8 +1,30 @@
 stages:
-  run_eda:
+  load_data:
+    cmd: python scripts/load_data.py
+    deps:
+      - data/raw/insurance.csv
+    outs:
+      - data/processed/cleaned.csv
+
+  eda:
     cmd: python notebooks/eda-task1.py
     deps:
-    - data/MachineLearningRating_v3.txt
-    - notebooks/eda-task1.py
+      - data/processed/cleaned.csv
+      - notebooks/eda-task1.py
     outs:
-    - notebooks/eda_outputs
+      - notebooks/eda_outputs/
+
+  feature_engineering:
+    cmd: python scripts/feature_engineering.py
+    deps:
+      - data/processed/cleaned.csv
+    outs:
+      - data/processed/features.csv
+
+  model:
+    cmd: python scripts/model_train.py
+    deps:
+      - data/processed/features.csv
+    outs:
+      - models/model.pkl
+

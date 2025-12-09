@@ -17,3 +17,20 @@ stages:
       md5: 0ef152d240ac3a55514b28825bbfcbd5.dir
       size: 8281
       nfiles: 7
+  eda:
+    cmd: python notebooks/eda-task1.py
+    deps:
+    - path: data/MachineLearningRating_v3.txt
+      hash: md5
+      md5: f6b7009b68ae21372b7deca9307fbb23
+      size: 529363713
+    - path: notebooks/eda-task1.py
+      hash: md5
+      md5: 134abc8f7c2ed364257be6890b8930ba
+      size: 4418
+    outs:
+    - path: notebooks/eda_outputs
+      hash: md5
+      md5: faf39a36ea91576485b21f3d113bd405.dir
+      size: 113596047
+      nfiles: 10

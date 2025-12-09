@@ -208,3 +208,6 @@ __marimo__/
 data/MachineLearningRating_v3.txt
 .dvc_storage/
 .dvc_storage/
+data/
+artifacts/
+notebooks/eda_outputs_backup/
