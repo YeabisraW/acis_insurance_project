@@ -1,143 +1,131 @@
 # notebooks/eda-task1.py
+"""
+Full EDA and Preprocessing for ACIS Insurance Project
+Generates:
+- Descriptive statistics
+- Histograms and bar plots
+- Box plots and outlier detection
+- Correlation matrices
+- Cleaned CSV for further analysis
+"""
+
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.pyplot as plt
 import os
 
-# ----------------------------
-# 1. Load data
-# ----------------------------
-def load_data(file_path="data/raw/MachineLearningRating_v3.txt", delimiter="|"):
-    """Load dataset with error handling."""
+# -----------------------------
+# Parameters
+# -----------------------------
+RAW_DATA_PATH = "data/raw/MachineLearningRating_v3.txt"
+OUTPUT_DIR = "notebooks/eda_outputs"
+CLEANED_CSV_PATH = "data/processed/insurance_cleaned.csv"
+NUMERIC_COLS = ['TotalPremium', 'TotalClaims', 'CustomValueEstimate']
+
+# -----------------------------
+# Helper Functions
+# -----------------------------
+def create_output_dir(path):
+    os.makedirs(path, exist_ok=True)
+
+def load_data(file_path):
     try:
-        df = pd.read_csv(file_path, delimiter=delimiter)
+        df = pd.read_csv(file_path, delimiter='|')
         print(f"Data loaded successfully: {df.shape[0]} rows, {df.shape[1]} columns")
         return df
-    except FileNotFoundError:
-        print(f"Error: File not found -> {file_path}")
-        return None
-    except pd.errors.ParserError as e:
-        print(f"Parser error: {e}")
-        return None
+    except Exception as e:
+        raise FileNotFoundError(f"Error loading file: {e}")
 
-# ----------------------------
-# 2. Compute derived columns
-# ----------------------------
-def compute_loss_ratio(df, premium_col="TotalPremium", claims_col="TotalClaims", loss_col="LossRatio"):
-    """Compute LossRatio and handle divide-by-zero."""
-    if df is not None:
-        df[loss_col] = df[claims_col] / df[premium_col]
-        df[loss_col] = df[loss_col].replace([np.inf, -np.inf], np.nan).fillna(0)
+def clean_numeric(df, cols):
+    for col in cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df = df.dropna(subset=cols)
     return df
 
-# ----------------------------
-# 3. Basic stats
-# ----------------------------
-def compute_basic_stats(df, numeric_vars):
-    """Return descriptive statistics."""
-    if df is not None:
-        return df[numeric_vars].describe()
-    return None
+def compute_loss_ratio(df):
+    df['LossRatio'] = df['TotalClaims'] / df['TotalPremium'].replace(0, np.nan)
+    df['LossRatio'] = df['LossRatio'].fillna(0)
+    return df
 
-# ----------------------------
-# 4. Univariate analysis
-# ----------------------------
-def univariate_analysis(df, numeric_vars, output_dir="artifacts/plots/univariate"):
-    os.makedirs(output_dir, exist_ok=True)
-    os.makedirs("artifacts/reports", exist_ok=True)
+def save_summary(df, output_dir):
+    summary = df.describe(include='all')
+    summary.to_csv(os.path.join(output_dir, 'numeric_summary.csv'))
+    print("Saved summary statistics")
 
-    outlier_report = {}
-
-    for col in numeric_vars:
-        # Histogram
-        plt.figure(figsize=(7, 5))
-        sns.histplot(df[col], kde=True)
-        plt.title(f"Histogram of {col}")
-        plt.xlabel(col)
-        plt.ylabel("Frequency")
-        plt.savefig(os.path.join(output_dir, f"{col}_histogram.png"))
+# -----------------------------
+# Plotting Functions
+# -----------------------------
+def plot_histograms(df, numeric_cols, output_dir):
+    for col in numeric_cols + ['LossRatio']:
+        plt.figure(figsize=(6,4))
+        sns.histplot(df[col], kde=True, bins=50)
+        plt.title(f"{col} Distribution")
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, f"{col}_hist.png"))
         plt.close()
 
-        # Boxplot + outlier detection
-        Q1 = df[col].quantile(0.25)
-        Q3 = df[col].quantile(0.75)
-        IQR = Q3 - Q1
-        lower = Q1 - 1.5 * IQR
-        upper = Q3 + 1.5 * IQR
-        outliers = df[(df[col] < lower) | (df[col] > upper)]
-        outlier_report[col] = {
-            "Q1": Q1,
-            "Q3": Q3,
-            "IQR": IQR,
-            "LowerBound": lower,
-            "UpperBound": upper,
-            "OutlierCount": len(outliers)
-        }
-
-        plt.figure(figsize=(7, 4))
-        sns.boxplot(x=df[col])
-        plt.title(f"Boxplot of {col}")
+def plot_boxplots(df, numeric_cols, output_dir):
+    for col in numeric_cols + ['LossRatio']:
+        plt.figure(figsize=(6,4))
+        sns.boxplot(y=df[col])
+        plt.title(f"{col} Boxplot")
+        plt.tight_layout()
         plt.savefig(os.path.join(output_dir, f"{col}_boxplot.png"))
         plt.close()
 
-    # Save outlier summary
-    outlier_df = pd.DataFrame(outlier_report).T
-    outlier_df.to_csv("artifacts/reports/outlier_summary.csv")
-    return outlier_df
-
-# ----------------------------
-# 5. Bivariate analysis
-# ----------------------------
-def bivariate_analysis(df, pairs, output_dir="artifacts/plots/bivariate"):
-    os.makedirs(output_dir, exist_ok=True)
-
-    for x, y in pairs:
-        plt.figure(figsize=(7, 5))
-        sns.scatterplot(x=df[x], y=df[y])
-        plt.title(f"Scatter Plot: {x} vs {y}")
-        plt.xlabel(x)
-        plt.ylabel(y)
-        plt.savefig(os.path.join(output_dir, f"{x}_vs_{y}.png"))
-        plt.close()
-
-# ----------------------------
-# 6. Multivariate analysis
-# ----------------------------
-def multivariate_analysis(df, numeric_vars, output_dir="artifacts/plots/multivariate"):
-    os.makedirs(output_dir, exist_ok=True)
-    corr = df[numeric_vars].corr()
-    corr.to_csv("artifacts/reports/correlation_matrix.csv")
-
-    plt.figure(figsize=(7, 6))
-    sns.heatmap(corr, annot=True, cmap="Blues", fmt=".2f")
-    plt.title("Correlation Matrix Heatmap")
-    plt.savefig(os.path.join(output_dir, "correlation_matrix_heatmap.png"))
+def plot_scatter(df, output_dir):
+    plt.figure(figsize=(6,4))
+    sns.scatterplot(x='TotalPremium', y='TotalClaims', data=df)
+    plt.title("TotalClaims vs TotalPremium")
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "TotalClaims_vs_TotalPremium_scatter.png"))
     plt.close()
-    return corr
+    
+    plt.figure(figsize=(6,4))
+    sns.scatterplot(x='TotalPremium', y='LossRatio', data=df)
+    plt.title("LossRatio vs TotalPremium")
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "LossRatio_vs_TotalPremium_scatter.png"))
+    plt.close()
+    
+    plt.figure(figsize=(6,4))
+    sns.scatterplot(x='TotalClaims', y='LossRatio', data=df)
+    plt.title("LossRatio vs TotalClaims")
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "LossRatio_vs_TotalClaims_scatter.png"))
+    plt.close()
 
-# ----------------------------
-# Main execution
-# ----------------------------
-def main(file_path="data/raw/MachineLearningRating_v3.txt",
-         numeric_vars=["TotalPremium", "TotalClaims", "LossRatio"]):
-    df = load_data(file_path)
-    if df is None:
-        return
+def correlation_matrix(df, numeric_cols, output_dir):
+    corr = df[numeric_cols + ['LossRatio']].corr()
+    corr.to_csv(os.path.join(output_dir, "correlation_matrix.csv"))
+    plt.figure(figsize=(6,5))
+    sns.heatmap(corr, annot=True, cmap='coolwarm')
+    plt.title("Correlation Matrix")
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "correlation_matrix.png"))
+    plt.close()
+    print("Saved correlation matrix")
 
-    df = compute_loss_ratio(df, numeric_vars[0], numeric_vars[1], numeric_vars[2])
-    stats = compute_basic_stats(df, numeric_vars)
-    print("\nBasic statistics:\n", stats)
-
-    univariate_analysis(df, numeric_vars)
-
-    pairs = [("TotalPremium", "TotalClaims"),
-             ("TotalPremium", "LossRatio"),
-             ("TotalClaims", "LossRatio")]
-    bivariate_analysis(df, pairs)
-
-    multivariate_analysis(df, numeric_vars)
-    print("\nEDA completed successfully. Check artifacts/ folder for outputs.\n")
-
+# -----------------------------
+# Main Execution
+# -----------------------------
 if __name__ == "__main__":
-    main()
+    create_output_dir(OUTPUT_DIR)
+    create_output_dir(os.path.dirname(CLEANED_CSV_PATH))
+    
+    df = load_data(RAW_DATA_PATH)
+    df = clean_numeric(df, NUMERIC_COLS)
+    df = compute_loss_ratio(df)
+    
+    save_summary(df, OUTPUT_DIR)
+    
+    plot_histograms(df, NUMERIC_COLS, OUTPUT_DIR)
+    plot_boxplots(df, NUMERIC_COLS, OUTPUT_DIR)
+    plot_scatter(df, OUTPUT_DIR)
+    correlation_matrix(df, NUMERIC_COLS, OUTPUT_DIR)
+    
+    # Save cleaned CSV for Task 3
+    df.to_csv(CLEANED_CSV_PATH, index=False)
+    print(f"Cleaned CSV saved at: {CLEANED_CSV_PATH}")
+    print("EDA Completed Successfully!")
