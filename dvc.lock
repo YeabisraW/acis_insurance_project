@@ -20,17 +20,35 @@ stages:
   eda:
     cmd: python notebooks/eda-task1.py
     deps:
-    - path: data/MachineLearningRating_v3.txt
+    - path: data/raw/MachineLearningRating_v3.txt
       hash: md5
       md5: f6b7009b68ae21372b7deca9307fbb23
       size: 529363713
     - path: notebooks/eda-task1.py
       hash: md5
-      md5: 134abc8f7c2ed364257be6890b8930ba
-      size: 4418
+      md5: 88709d1f04b68f86e2deaad502f0ca58
+      size: 4815
     outs:
-    - path: notebooks/eda_outputs
+    - path: artifacts/plots/bivariate
       hash: md5
-      md5: faf39a36ea91576485b21f3d113bd405.dir
-      size: 113596047
-      nfiles: 10
+      md5: 4d874fd8dfba4b5211509600408c0592.dir
+      size: 84306
+      nfiles: 3
+    - path: artifacts/plots/multivariate
+      hash: md5
+      md5: 3e3f243f859cf06f0af37b09b6c39493.dir
+      size: 24212
+      nfiles: 1
+    - path: artifacts/plots/univariate
+      hash: md5
+      md5: d0e1665f724b46de1f7209f92b381122.dir
+      size: 83265
+      nfiles: 6
+    - path: artifacts/reports/correlation_matrix.csv
+      hash: md5
+      md5: 13090285fa96e00e88de41297722eb47
+      size: 205
+    - path: artifacts/reports/outlier_summary.csv
+      hash: md5
+      md5: 4a6f017a5b435472894bdf8e2d13859c
+      size: 219
